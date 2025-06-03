@@ -1,12 +1,12 @@
 ;; ===== Optimization =====
 (setq package-enable-at-startup nil)
 (setq frame-inhibit-implied-resize t)
-(setq native-comp-async-report-warnings-errors 'silent)  ; можно изменить на nil для дебага
+(setq native-comp-async-report-warnings-errors 'silent)
 (setq warning-minimum-level :error)
-(setq gc-cons-threshold (* 50 1000 1000))  ; 50 MB
+(setq gc-cons-threshold (* 50 1000 1000))
 (add-hook 'emacs-startup-hook
-          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))  ; 2 MB после запуска
-(setq read-process-output-max (* 1024 1024))  ; 1 MB для асинхронных процессов
+          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
+(setq read-process-output-max (* 1024 1024))
 (prefer-coding-system 'utf-8)
 
 ;; ===== Startup Cleanup =====
@@ -19,15 +19,13 @@
                     :family "JetBrains Mono"
                     :height 130)
 
-;; Win+x как Meta+x
-(when (eq system-type 'windows-nt)
-  (define-key key-translation-map (kbd "s-x") (kbd "M-x")))
+;; Пример: делать Win+x → как Meta+x
+(define-key key-translation-map (kbd "s-x") (kbd "M-x"))
 
 ;; ===== Package Manager =====
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("gnu" . "https://elpa.gnu.org/packages/")
-                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
+                         ("gnu" . "https://elpa.gnu.org/packages/")))
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -36,6 +34,7 @@
 
 (eval-when-compile
   (require 'use-package))
+
 (setq use-package-always-ensure t)
 
 ;; ===== Interface =====
@@ -44,72 +43,63 @@
 (menu-bar-mode -1)
 (setq visible-bell t)
 
-;; Линии номеров
 (setq display-line-numbers-type 'relative)
 (global-display-line-numbers-mode t)
 
-;; Темы и иконки
-(use-package doom-themes
-  :config 
-  (load-theme 'doom-one t)
-  (doom-themes-visual-bell-config))  ; визуальный звонок в стиле doom
-
-(use-package all-the-icons
-  :if (display-graphic-p))
-
-;; Моделайн
+(use-package doom-themes :config (load-theme 'doom-one t))
+(use-package all-the-icons)
 (use-package doom-modeline
-  :hook (after-init . doom-modeline-mode)
-  :config
-  (setq doom-modeline-icon t
-        doom-modeline-major-mode-color-icon t))
+  :hook (after-init . doom-modeline-mode))
 
-(use-package which-key
-  :init (which-key-mode))
-
-;; Сохранение позиций в файлах
+(use-package which-key :init (which-key-mode))
 (save-place-mode 1)
 (setq save-place-file (expand-file-name "places" user-emacs-directory))
 
 ;; ===== Completion & Navigation =====
-(use-package vertico
-  :init (vertico-mode))
-
-(use-package consult)
-
-(use-package orderless
-  :init
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        orderless-component-separator #'orderless-escapable-split-on-space))
-
-(use-package marginalia
-  :init (marginalia-mode))
+(use-package vertico :init (vertico-mode))
+(use-package consult
+  :config
+  ;; Скрыть системные буферы из consult-buffer
+  (setq consult-buffer-filter
+        (list "\\` "
+              (rx bos
+                  (or
+                   "*Async-native-compile-log*"
+                   "*Compile-Log*"
+                   "*Warnings*"
+                   "*Messages*"
+                   "*Completions*"
+                   "*scratch*"
+                   "*Backtrace*"
+                   "*eldoc*"
+                   "*Help*"
+                   "*Apropos*"
+                   "*Flymake log*"
+                   )
+                  eos))))
+  
+  ;; ИЛИ альтернативный вариант через regexp:
+  ; (setq consult-buffer-filter
+  ;       "\\`\\*\\(Async\\|Messages\\|Warnings\\|Compile-Log\\|Completions\\|scratch\\|Backtrace\\|eldoc\\|Help\\|Apropos\\|Flymake log\\)\\*"))
+(use-package marginalia :init (marginalia-mode))
+(use-package orderless    ; Гибкий поиск (как fzf)
+  :init (setq completion-styles '(orderless)))
 
 ;; ===== Evil Mode =====
 (use-package evil
-  :init
-  (setq evil-want-keybinding nil)  ; для корректной работы с другими пакетами
   :config
   (evil-mode 1)
   (dolist (mode '(magit-status-mode magit-popup-mode magit-revision-mode
-                magit-diff-mode magit-log-mode))
+                  magit-diff-mode magit-log-mode))
     (add-to-list 'evil-emacs-state-modes mode)))
-
-;; Навигация по окнам в evil
-(use-package evil-collection
-  :after evil
-  :config
-  (evil-collection-init))
 
 ;; ===== LSP =====
 (use-package eglot
   :hook ((python-mode c-mode c++-mode rust-mode go-mode) . eglot-ensure)
   :config
-  (setq eglot-autoshutdown t
-        eglot-ignored-server-capabilities '(:signatureHelpProvider))
+  (setq eglot-autoshutdown t)
   (add-to-list 'eglot-server-programs
-               '(makefile-mode . ("bash-language-server" "start")))
+               '(makefile-mode . ("bash-language-server" "start"))))
 
 (use-package dap-mode
   :after eglot
@@ -121,48 +111,46 @@
   :init (global-company-mode)
   :config
   (setq company-minimum-prefix-length 1
-        company-idle-delay 0.3)  ; более плавное автодополнение
+        company-idle-delay 0.1)
   (define-key company-active-map (kbd "C-n") #'company-select-next)
   (define-key company-active-map (kbd "C-p") #'company-select-previous)
   (define-key company-active-map (kbd "C-y") #'company-complete-selection))
 
 ;; ===== Git =====
 (use-package magit
+  :commands magit-status
   :bind ("C-x g" . magit-status))
 
 ;; ===== Tree View =====
 (use-package treemacs
-  :bind ("C-x t" . treemacs)
-  :config 
-  (treemacs-git-mode 'extended))
-
-(use-package treemacs-projectile
-  :after (treemacs projectile))
-
+  :bind ("C-c t" . treemacs)
+  :config (treemacs-git-mode 'extended))
+(use-package treemacs-projectile :after (treemacs projectile))
 (use-package treemacs-evil :after (treemacs evil))
 
 ;; ===== Treesitter =====
 (use-package tree-sitter
-  :config 
-  (global-tree-sitter-mode)
-  (tree-sitter-require 'tsx)  ; пример для конкретного языка
-  (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-mode . tsx)))
-
-(use-package tree-sitter-langs
-  :after tree-sitter)
+  :config (global-tree-sitter-mode))
+(use-package tree-sitter-langs :after tree-sitter)
 
 ;; ===== Terminal =====
-(use-package vterm
-  :if (not (eq system-type 'windows-nt)))  ; на Windows может работать плохо
+(use-package vterm)
 
-;; ===== Bufferline =====
+; ===== Bufferline =====
 (use-package centaur-tabs
-  :init (centaur-tabs-mode 1)
+  :ensure t
   :config
-  (setq centaur-tabs-style "bar"
-        centaur-tabs-set-icons t
-        centaur-tabs-show-new-tab-button nil)
-  (centaur-tabs-headline-match))
+  ;; Включаем режим вкладок
+  (centaur-tabs-mode t)
+
+  ; ;; Опционально: включаем отображение иконок
+  (setq centaur-tabs-set-icons t)
+  ; ;; Показываем линии вкладок в верхнем положении
+  ; (setq centaur-tabs-style "bar")
+  ; (setq centaur-tabs-height 32)
+  ; (setq centaur-tabs-set-bar 'under)
+  ; (setq centaur-tabs-close-button "✕")
+)
 
 ;; ===== Makefile support =====
 (defun my-make-compile ()
@@ -173,22 +161,63 @@
 ;; ===== Tabs & Indentation =====
 (setq-default tab-width 4)
 (setq-default indent-tabs-mode nil)
-(setq-default electric-indent-inhibit nil)
-(electric-pair-mode 1)  ; авто-закрытие скобок
-
+(indent-tabs-mode nil)
 (add-hook 'prog-mode-hook
           (lambda ()
             (setq tab-width 4)))
 
-;; ===== Дополнительные улучшения =====
-;; Автосохранение
-(use-package super-save
+(use-package general
   :config
-  (super-save-mode +1)
-  (setq super-save-auto-save-when-idle t
-        super-save-idle-duration 5))
+  (general-create-definer my/leader-keys
+    :keymaps '(normal insert visual emacs)
+    :prefix "SPC"
+    :global-prefix "C-SPC"))
 
-;; Проверка орфографии
-(use-package flyspell
-  :hook ((text-mode . flyspell-mode)
-         (prog-mode . flyspell-prog-mode)))
+(defun my/next-user-buffer ()
+  "Переключиться на следующий пользовательский буфер."
+  (interactive)
+  (let ((start (current-buffer)))
+    (next-buffer)
+    (while (and (string-prefix-p "*" (buffer-name))  ; буферы типа *Messages*
+                (not (eq (current-buffer) start)))
+      (next-buffer))))
+
+(defun my/prev-user-buffer ()
+  "Переключиться на предыдущий пользовательский буфер."
+  (interactive)
+  (let ((start (current-buffer)))
+    (previous-buffer)
+    (while (and (string-prefix-p "*" (buffer-name))
+                (not (eq (current-buffer) start)))
+      (previous-buffer))))
+
+(defun my/evil-buffer-new-named ()
+  "Create a new user buffer with unique name."
+  (interactive)
+  (let ((buf (generate-new-buffer-name "untitled")))
+    (switch-to-buffer buf)
+    (evil-normal-state)))
+
+;; Теперь можно задавать бинды с лидером
+(my/leader-keys
+  "f"  '(:ignore t :which-key "files")
+  "ff" '(consult-find :which-key "find file")
+  "fg" '(consult-ripgrep :which-key "grep")
+  "fb" '(consult-buffer :which-key "buffers")
+  "fl" '(consult-line :which-key "search line")
+  "t" '(my/evil-buffer-new-named :which-key "new buffer")
+  "<tab>" '(my/next-user-buffer :which-key "next-buffer")
+  "<backtab>" '(my/prev-user-buffer :which-key "prev-buffer")
+  "d" '(evil-delete-buffer :which-key "delete buffer"))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
