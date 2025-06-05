@@ -24,9 +24,6 @@
                     :family "JetBrains Mono"
                     :height 140)
 
-;; Пример: делать Win+x → как Meta+x
-(define-key key-translation-map (kbd "s-x") (kbd "M-x"))
-
 ;; ===== Package Manager =====
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -67,7 +64,7 @@
 (use-package vertico :init (vertico-mode))
 (use-package consult
   :config
-  ;; Скрыть системные буферы из consult-buffer
+  ;; hide system buffer
   (setq consult-buffer-filter
         (list "\\` "
               (rx bos
@@ -86,9 +83,7 @@
                    )
                   eos))))
   
-  ;; ИЛИ альтернативный вариант через regexp:
-  ; (setq consult-buffer-filter
-  ;       "\\`\\*\\(Async\\|Messages\\|Warnings\\|Compile-Log\\|Completions\\|scratch\\|Backtrace\\|eldoc\\|Help\\|Apropos\\|Flymake log\\)\\*"))
+  ;; alternative variant
 (use-package marginalia :init (marginalia-mode))
 (use-package orderless    ; Гибкий поиск (как fzf)
   :init (setq completion-styles '(orderless)))
@@ -105,14 +100,13 @@
 (use-package eglot
   :hook ((python-mode c-mode c++-mode rust-mode go-mode) . eglot-ensure)
   :config
-  ;; Если хочешь, отключить signatureHelpProvider — но я бы временно убрал для теста
-  ;; (setq eglot-ignored-server-capabilities '(:signatureHelpProvider))
+  (setq eglot-ignored-server-capabilities '(:signatureHelpProvider))
 
   ;; Добавляем для makefile
   (add-to-list 'eglot-server-programs
                '(makefile-mode . ("bash-language-server" "start"))))
 
-  ;; Переопределяем сервер для C/C++ на ccls
+  ;; change clangd to ccls
   ; (add-to-list 'eglot-server-programs
   ;              '(c-mode . ("ccls")))
   ; (add-to-list 'eglot-server-programs
@@ -173,17 +167,9 @@
 (use-package centaur-tabs
   :ensure t
   :config
-  ;; Включаем режим вкладок
   (centaur-tabs-mode t)
 
-  ; ;; Опционально: включаем отображение иконок
-  (setq centaur-tabs-set-icons t)
-  ; ;; Показываем линии вкладок в верхнем положении
-  ; (setq centaur-tabs-style "bar")
-  ; (setq centaur-tabs-height 32)
-  ; (setq centaur-tabs-set-bar 'under)
-  ; (setq centaur-tabs-close-button "✕")
-)
+  (setq centaur-tabs-set-icons t))
 
 ;; ===== Makefile support =====
 (defun my-make-compile ()
@@ -207,7 +193,7 @@
     :global-prefix "C-SPC"))
 
 (defun my/next-user-buffer ()
-  "Переключиться на следующий пользовательский буфер."
+  "move to next user buffer."
   (interactive)
   (let ((start (current-buffer)))
     (next-buffer)
@@ -216,7 +202,7 @@
       (next-buffer))))
 
 (defun my/prev-user-buffer ()
-  "Переключиться на предыдущий пользовательский буфер."
+  "move to prev. user buffer."
   (interactive)
   (let ((start (current-buffer)))
     (previous-buffer)
@@ -238,12 +224,6 @@
           (kill-buffer)
         (delete-window))
     (kill-buffer)))
-
-(defun my/eglot-disable-signature-help ()
-  "Disable eglot signature help overlays."
-  (remove-hook 'eldoc-documentation-functions #'eglot-signature-eldoc-function t))
-
-(add-hook 'eglot-managed-mode-hook #'my/eglot-disable-signature-help)
 
 (my/leader-keys
   "f"  '(:ignore t :which-key "files")
