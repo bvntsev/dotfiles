@@ -3,6 +3,8 @@
 # Если оболочка неинтерактивная, ничего не делаем
 [[ $- != *i* ]] && return
 
+alias markupCS="bash /home/chillwcat/bsh/markupCS.sh"
+alias flamegui="flameshot gui"
 # История команд
 HISTCONTROL=ignoreboth  # Игнорировать дубли и команды, начинающиеся с пробела
 HISTSIZE=1000           # Размер истории в памяти

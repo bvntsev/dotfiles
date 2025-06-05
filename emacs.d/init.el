@@ -9,6 +9,11 @@
 (setq read-process-output-max (* 1024 1024))
 (prefer-coding-system 'utf-8)
 
+;; backup fix
+(setq backup-directory-alist
+      `(("." . ,(expand-file-name "~/.emacs.d/backups"))))
+(setq make-backup-files t) 
+
 ;; ===== Startup Cleanup =====
 (setq inhibit-startup-screen t)
 (setq inhibit-startup-message t)
@@ -17,7 +22,7 @@
 ;; ===== Font =====
 (set-face-attribute 'default nil
                     :family "JetBrains Mono"
-                    :height 130)
+                    :height 140)
 
 ;; Пример: делать Win+x → как Meta+x
 (define-key key-translation-map (kbd "s-x") (kbd "M-x"))
@@ -45,6 +50,9 @@
 
 (setq display-line-numbers-type 'relative)
 (global-display-line-numbers-mode t)
+
+(setq evil-split-window-below t)
+(setq evil-vsplit-window-right t)
 
 (use-package doom-themes :config (load-theme 'doom-one t))
 (use-package all-the-icons)
@@ -97,9 +105,18 @@
 (use-package eglot
   :hook ((python-mode c-mode c++-mode rust-mode go-mode) . eglot-ensure)
   :config
-  (setq eglot-autoshutdown t)
+  ;; Если хочешь, отключить signatureHelpProvider — но я бы временно убрал для теста
+  ;; (setq eglot-ignored-server-capabilities '(:signatureHelpProvider))
+
+  ;; Добавляем для makefile
   (add-to-list 'eglot-server-programs
                '(makefile-mode . ("bash-language-server" "start"))))
+
+  ;; Переопределяем сервер для C/C++ на ccls
+  ; (add-to-list 'eglot-server-programs
+  ;              '(c-mode . ("ccls")))
+  ; (add-to-list 'eglot-server-programs
+  ;              '(c++-mode . ("ccls"))))
 
 (use-package dap-mode
   :after eglot
@@ -108,13 +125,22 @@
 
 ;; ===== Autocompletion =====
 (use-package company
-  :init (global-company-mode)
+  :init
+  (global-company-mode)
   :config
   (setq company-minimum-prefix-length 1
-        company-idle-delay 0.1)
+        company-idle-delay 0.1
+        company-auto-commit nil     
+        company-auto-complete nil)
+
   (define-key company-active-map (kbd "C-n") #'company-select-next)
   (define-key company-active-map (kbd "C-p") #'company-select-previous)
-  (define-key company-active-map (kbd "C-y") #'company-complete-selection))
+  (define-key company-active-map (kbd "C-y") #'company-complete-selection)
+
+  (define-key company-active-map (kbd "<return>") nil)
+  (define-key company-active-map (kbd "RET") nil)
+  (define-key company-active-map (kbd "<tab>") nil)
+  (define-key company-active-map (kbd "TAB") nil))
 
 ;; ===== Git =====
 (use-package magit
@@ -135,6 +161,13 @@
 
 ;; ===== Terminal =====
 (use-package vterm)
+
+(use-package move-text)
+(global-set-key (kbd "s-p") 'move-text-up)
+(global-set-key (kbd "s-n") 'move-text-down)
+
+
+
 
 ; ===== Bufferline =====
 (use-package centaur-tabs
@@ -198,17 +231,39 @@
     (switch-to-buffer buf)
     (evil-normal-state)))
 
-;; Теперь можно задавать бинды с лидером
+(defun my/close-buffer-or-window ()
+  (interactive)
+  (if (string-prefix-p "*" (buffer-name))
+      (if (one-window-p)
+          (kill-buffer)
+        (delete-window))
+    (kill-buffer)))
+
+(defun my/eglot-disable-signature-help ()
+  "Disable eglot signature help overlays."
+  (remove-hook 'eldoc-documentation-functions #'eglot-signature-eldoc-function t))
+
+(add-hook 'eglot-managed-mode-hook #'my/eglot-disable-signature-help)
+
 (my/leader-keys
   "f"  '(:ignore t :which-key "files")
-  "ff" '(consult-find :which-key "find file")
-  "fg" '(consult-ripgrep :which-key "grep")
+  "ff" '(find-file :which-key "find file")
+  "fd" '(dired :which-key "find directory")
   "fb" '(consult-buffer :which-key "buffers")
   "fl" '(consult-line :which-key "search line")
+  "fc" '((lambda () (interactive) (find-file "~/.emacs.d/init.el"))
+         :which-key "open config init.el")
+
+  "cd" '(compile :which-key "compile current directory")
+  "cp" '(project-compile :which-key "project compile")
+
   "t" '(my/evil-buffer-new-named :which-key "new buffer")
+  ;"d" '((lambda () (interactive) (kill-this-buffer))
+  ;      :which-key "delete buffer")  ;; ← фикс!
+  "d" '(my/close-buffer-or-window :which-key "delete buffer")
   "<tab>" '(my/next-user-buffer :which-key "next-buffer")
-  "<backtab>" '(my/prev-user-buffer :which-key "prev-buffer")
-  "d" '(evil-delete-buffer :which-key "delete buffer"))
+  "<backtab>" '(my/prev-user-buffer :which-key "prev-buffer"))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -221,3 +276,16 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+
+(global-set-key (kbd "C-c d") #'my/close-buffer-or-window)
+
+(with-eval-after-load 'compile
+  (define-key compilation-mode-map (kbd "C-c d") #'my/close-buffer-or-window))
+
+(with-eval-after-load 'special-mode
+  (define-key special-mode-map (kbd "C-c d") #'my/close-buffer-or-window))
+
+(dolist (map (list compilation-mode-map special-mode-map))
+  (when map
+    (define-key map (kbd "C-c d") #'my/close-buffer-or-window)))
