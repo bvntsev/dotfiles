@@ -1,11 +1,3 @@
-;; ===== Optimization =====
-(setq package-enable-at-startup nil)
-(setq frame-inhibit-implied-resize t)
-(setq native-comp-async-report-warnings-errors 'silent)
-(setq warning-minimum-level :error)
-(setq gc-cons-threshold (* 50 1000 1000))
-(add-hook 'emacs-startup-hook
-          (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 (setq read-process-output-max (* 1024 1024))
 (prefer-coding-system 'utf-8)
 
@@ -22,12 +14,13 @@
 ;; ===== Font =====
 (set-face-attribute 'default nil
                     :family "JetBrains Mono"
-                    :height 140)
+                    :height 120)
 
 ;; ===== Package Manager =====
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("gnu" . "https://elpa.gnu.org/packages/")))
+
 (package-initialize)
 
 (unless (package-installed-p 'use-package)
@@ -83,7 +76,8 @@
                    )
                   eos))))
   
-  ;; alternative variant
+  ; (setq consult-buffer-filterAdd commentMore actions
+  ;       "\\`\\*\\(Async\\|Messages\\|Warnings\\|Compile-Log\\|Completions\\|scratch\\|Backtrace\\|eldoc\\|Help\\|Apropos\\|Flymake log\\)\\*"))
 (use-package marginalia :init (marginalia-mode))
 (use-package orderless    ; Гибкий поиск (как fzf)
   :init (setq completion-styles '(orderless)))
@@ -107,18 +101,50 @@
                '(makefile-mode . ("bash-language-server" "start"))))
 
   ;; change clangd to ccls
-  ; (add-to-list 'eglot-server-programs
-  ;              '(c-mode . ("ccls")))
-  ; (add-to-list 'eglot-server-programs
-  ;              '(c++-mode . ("ccls"))))
+  ;; (add-to-list 'eglot-server-programs
+  ;;              '(c-mode . ("ccls")))
+  ;; (add-to-list 'eglot-server-programs
+  ;;              '(c++-mode . ("ccls"))))
 
 (use-package dap-mode
   :after eglot
   :config
   (dap-auto-configure-mode))
 
+
+;; (use-package lsp-mode
+;;   :ensure t
+;;   :init
+;;   (setq lsp-keymap-prefix "C-c l")  ;; Префикс для команд lsp
+;;   :hook
+;;   ((c-mode c++-mode python-mode sh-mode) . lsp)  ;; Автозапуск для языков
+;;   :config
+;;   (setq lsp-auto-guess-root t)  ;; Автопоиск корня проекта
+;;   (setq lsp-log-io nil)         ;; Не логировать всё подряд (для производительности)
+;;   (setq lsp-enable-snippet nil) ;; Отключить сниппеты (если мешают)
+;;   (setq lsp-headerline-breadcrumb-enable nil))  ;; Отключить хлебные крошки (опционально)
+
+;; ;; Улучшенный UI (опционально)
+;; (use-package lsp-ui
+;;   :ensure t
+;;   :after lsp-mode
+;;   :commands lsp-ui-mode
+;;   :config
+;;   (setq lsp-ui-doc-enable t          ;; Показывать документацию при наведении
+;;         lsp-ui-doc-position 'top     ;; Где показывать док
+;;         lsp-ui-sideline-enable t))   ;; Боковая панель с информацией
+
+;; (use-package dap-mode
+;;   :ensure t
+;;   :after lsp-mode
+;;   :config
+;;   (dap-auto-configure-mode)
+;;   (dap-tooltip-mode))
+
 ;; ===== Autocompletion =====
 (use-package company
+  :ensure t
+  :hook (prog-mode . company-mode)
   :init
   (global-company-mode)
   :config
@@ -136,6 +162,11 @@
   (define-key company-active-map (kbd "<tab>") nil)
   (define-key company-active-map (kbd "TAB") nil))
 
+;; (use-package company-lsp
+;;   :ensure t
+;;   :after (company lsp-mode)
+;;   :config (push 'company-lsp company-backends))
+
 ;; ===== Git =====
 (use-package magit
   :commands magit-status
@@ -149,9 +180,15 @@
 (use-package treemacs-evil :after (treemacs evil))
 
 ;; ===== Treesitter =====
-(use-package tree-sitter
-  :config (global-tree-sitter-mode))
-(use-package tree-sitter-langs :after tree-sitter)
+;; Tree-sitter для синтаксиса и базовых проверок
+(use-package treesit
+  :ensure nil
+  :config
+  (setq treesit-font-lock-level 4)) ; Максимальная подсветка
+
+;; Flycheck (+ LSP) для глубокого анализа
+(use-package flycheck
+  :hook (prog-mode . flycheck-mode))
 
 ;; ===== Terminal =====
 (use-package vterm)
@@ -160,8 +197,9 @@
 (global-set-key (kbd "s-p") 'move-text-up)
 (global-set-key (kbd "s-n") 'move-text-down)
 
-
-
+;; (use-package org-roam
+;;   :ensure t
+;;   :init (org-roam-db-autosync-mode))
 
 ; ===== Bufferline =====
 (use-package centaur-tabs
@@ -231,6 +269,7 @@
   "fd" '(dired :which-key "find directory")
   "fb" '(consult-buffer :which-key "buffers")
   "fl" '(consult-line :which-key "search line")
+  "fp" '(project-dired :which-key "open project directory")
   "fc" '((lambda () (interactive) (find-file "~/.emacs.d/init.el"))
          :which-key "open config init.el")
 

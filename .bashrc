@@ -3,9 +3,10 @@
 # Если оболочка неинтерактивная, ничего не делаем
 [[ $- != *i* ]] && return
 
-alias markupCS="bash ~/bsh/markupCS.sh"
 alias flamegui="flameshot gui"
-
+alias gf="~/repos/gf/gf2"
+# alias lnbin="sudo bash ~/bsh/lnbin.sh"
+#
 # The history command
 HISTCONTROL=ignoreboth  # the ignore clones
 HISTSIZE=1000           # size history
