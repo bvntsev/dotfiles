@@ -11,7 +11,6 @@ return {
             "Color3",
             "Color4",
             "Color5",
-            "Color6", 
         }
 
         local sunflowerDelims = {
@@ -26,12 +25,11 @@ return {
         -- create the highlight groups in the highlight setup hook, so they are reset
         -- every time the colorscheme changes
         hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-            vim.api.nvim_set_hl(0, "Color1", { fg = "#d26487" })
-            vim.api.nvim_set_hl(0, "Color2", { fg = "#35a8a5" })
-            vim.api.nvim_set_hl(0, "Color3", { fg = "#6981c5" })
-            vim.api.nvim_set_hl(0, "Color4", { fg = "#a15ea7" })
-            vim.api.nvim_set_hl(0, "Color5", { fg = "#288668" })
-            vim.api.nvim_set_hl(0, "Color6", { fg = "#ca754b" })
+            vim.api.nvim_set_hl(0, "Color1", { fg = "#91C4F2" })
+            vim.api.nvim_set_hl(0, "Color2", { fg = "#8CA0D7" })
+            vim.api.nvim_set_hl(0, "Color3", { fg = "#9D79BC" })
+            vim.api.nvim_set_hl(0, "Color4", { fg = "#A14DA0" })
+            vim.api.nvim_set_hl(0, "Color5", { fg = "#7E1F86" })
             vim.api.nvim_set_hl(0, "Sunflower1", { fg = "#FBCA47" })
             vim.api.nvim_set_hl(0, "Sunflower2", { fg = "#FBEB62" })
             vim.api.nvim_set_hl(0, "Sunflower3", { fg = "#DE6D11" })

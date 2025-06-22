@@ -1,8 +1,7 @@
-# BeeConfig
-My personal neovim config 
+# Description
+It's my first try write my config in neovim  
 
-![Config Showcase](./assets/displaySS.png)
-
-- Requires Neovim 10 
-
-- Meant as a reference and not a drop in as certain configuration options are tailored towards my environment
+# Thanks  
+Love-Pengy  
+rockerBOO/awesome-neovim  
+jvscholz  
