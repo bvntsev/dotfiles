@@ -4,9 +4,14 @@
 [[ $- != *i* ]] && return
 
 alias flamegui="flameshot gui"
+alias screenoff='xset dpms force off'
+alias idle='screenoff && slock'
+alias sleepl='systemctl suspend && slock'
 alias gf="~/repos/gf/gf2"
-# alias lnbin="sudo bash ~/bsh/lnbin.sh"
-#
+alias proxyon='export http_proxy="http://127.0.0.1:2080"; export https_proxy="http://127.0.0.1:2080"; export all_proxy="socks5h://127.0.0.1:2080"; echo "Proxy ON"'
+alias proxyoff='unset http_proxy; unset https_proxy; unset all_proxy; echo "Proxy OFF"'
+
+
 # The history command
 HISTCONTROL=ignoreboth  # the ignore clones
 HISTSIZE=1000           # size history
@@ -25,6 +30,7 @@ if [ -x /usr/bin/dircolors ]; then
     alias fgrep='fgrep --color=auto'
     alias egrep='egrep --color=auto'
 fi
+
 
 # Collest aliases
 alias ll='ls -alF'
@@ -60,4 +66,3 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
-. "$HOME/.cargo/env"
