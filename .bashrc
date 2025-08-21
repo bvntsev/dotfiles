@@ -8,8 +8,17 @@ alias screenoff='xset dpms force off'
 alias idle='screenoff && slock'
 alias sleepl='systemctl suspend && slock'
 alias gf="~/repos/gf/gf2"
-alias proxyon='export http_proxy="http://127.0.0.1:2080"; export https_proxy="http://127.0.0.1:2080"; export all_proxy="socks5h://127.0.0.1:2080"; echo "Proxy ON"'
-alias proxyoff='unset http_proxy; unset https_proxy; unset all_proxy; echo "Proxy OFF"'
+
+alias proxyon='export http_proxy="http://127.0.0.1:2080"; \
+export https_proxy="http://127.0.0.1:2080"; \
+export all_proxy="socks5h://127.0.0.1:2080"; \
+echo "Proxy is ON" | tee /tmp/.proxy_status > /dev/null; \
+chmod 600 /tmp/.proxy_status'
+
+
+alias proxyoff='unset http_proxy; unset https_proxy; unset all_proxy; \
+echo "Proxy is OFF" | tee /tmp/.proxy_status > /dev/null; \
+chmod 600 /tmp/.proxy_status'
 
 
 # The history command

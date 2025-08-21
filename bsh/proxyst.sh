@@ -1,7 +1,12 @@
 #!/bin/bash
 
+status=""
 if [[ -n "$http_proxy" ]]; then
-    echo "Proxy is ON"
+    status="Proxy is ON"
 else
-    echo "Proxy is OFF"
+    status="Proxy is OFF"
 fi
+
+echo "$status"
+echo "$status" | tee /tmp/.proxy_status > /dev/null
+chmod 600 /tmp/.proxy_status
