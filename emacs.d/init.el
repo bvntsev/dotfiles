@@ -1,10 +1,13 @@
-(setq read-process-output-max (* 1024 1024))
+;; -*- lexical-binding: t; -*-
+
+(setq read-process-output-max (* 2 1024 1024)) ;; 2MB
 (prefer-coding-system 'utf-8)
 
-;; backup fix
-(setq backup-directory-alist
-      `(("." . ,(expand-file-name "~/.emacs.d/backups"))))
-(setq make-backup-files t)
+;; backup
+(setq make-backup-files t
+      backup-directory-alist `(("." . ,(expand-file-name "~/.emacs.d/backups")))
+      auto-save-file-name-transforms `((".*" ,(expand-file-name "~/.emacs.d/auto-saves/") t))
+      auto-save-default t)
 
 ;; ===== Startup Cleanup =====
 (setq inhibit-startup-screen t)
@@ -22,6 +25,11 @@
                          ("gnu" . "https://elpa.gnu.org/packages/")))
 
 (package-initialize)
+
+(setq native-comp-async-report-warnings-errors 'silent)
+(use-package magit :defer t)
+(use-package vterm :defer t)
+(use-package treemacs :defer t)
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -141,6 +149,8 @@
   :ensure t
   :hook (prog-mode . company-mode)
   :config
+  (setq company-tooltip-align-annotations t
+        company-show-numbers t)
   (setq company-minimum-prefix-length 1
         company-idle-delay 0.1
         company-auto-commit nil
@@ -304,10 +314,7 @@
             (setq-local indent-tabs-mode t)
             (local-set-key (kbd "RET") #'my/c-newline-and-indent)))
 (custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
+ '(org-agenda-files nil)
  '(package-selected-packages nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -315,3 +322,117 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(require 'org)
+;; ===== Org-mode: динамическая agenda =====
+(defun my/org-get-month-files (&optional date)
+  "Возвращает список org-файлов за месяц для DATE, игнорируя lock-файлы."
+  (let* ((date (or date (current-time)))
+         (year (format-time-string "%Y" date))
+         (month (format-time-string "%m-%B" date))
+         (month-dir (expand-file-name (concat "~/sync/org/" year "/" month "/"))))
+    (when (file-directory-p month-dir)
+      (cl-remove-if (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
+                    (file-expand-wildcards (concat month-dir "*.org"))))))
+
+(defun my/org-agenda-files-for-current-week ()
+  "Возвращает список org-файлов за текущую неделю (учитывая переход месяца)."
+  (let* ((today (current-time))
+         (dow (string-to-number (format-time-string "%u" today))) ; 1 = Mon ... 7 = Sun
+         (start-of-week (time-subtract today (days-to-time (1- dow))))
+         (dates (cl-loop for i from 0 to 6
+                         collect (time-add start-of-week (days-to-time i)))))
+    (delete-dups
+     (apply 'append
+            (mapcar #'my/org-get-month-files dates)))))
+
+(setq org-agenda-files (my/org-agenda-files-for-current-week))
+
+;; ===== Org-mode: открытие/создание файла текущего дня =====
+(defun my/org-open-today-file ()
+  "Открывает файл org текущего дня или создаёт его с шаблоном."
+  (let* ((year (format-time-string "%Y"))
+         (month (format-time-string "%m-%B"))
+         (day-file (format-time-string "%dW-%Y-%m-%d-%A.org"))
+         (dir (expand-file-name (concat "~/sync/org/" year "/" month "/")))
+         (path (expand-file-name day-file dir)))
+    (unless (file-directory-p dir)
+      (make-directory dir t))
+    (unless (file-exists-p path)
+      (with-temp-buffer
+        (insert (format "#+TITLE: %s\n" (format-time-string "%Y-%m-%d %A")))
+        (insert (format "#+DATE: %s\n" (format-time-string "%Y-%m-%d")))
+        (insert (format "#+CREATED: %s\n" (format-time-string "%Y-%m-%d %a %H:%M")))
+        (insert "#+CATEGORY: daily\n\n")
+        (dolist (section '("* Uni_classes [/]"
+                           "* Deadline [/]"
+                           "* Schedule [/]"
+                           "* Tasks [/]"
+                           "* Notes"
+                           "* Events"))
+          (insert section "\n** ...\n\n"))
+        (write-file path)))
+    (find-file path)))
+
+;; Открывать файл текущего дня при старте Emacs
+(add-hook 'emacs-startup-hook #'my/org-open-today-file)
+
+;; ===== Org-mode: кастомные TODO статусы =====
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "IN-PROGRESS(p)" "WAITING(w)" "REVIEW(r)" "|" "DONE(d)" "CANCELED(c)")))
+
+(setq org-todo-keyword-faces
+      '(("TODO" . (:foreground "green" :weight bold))
+        ("IN-PROGRESS" . (:foreground "orange" :weight bold))
+        ("WAITING" . (:foreground "yellow" :weight bold))
+        ("REVIEW" . (:foreground "cyan" :weight bold))
+        ("DONE" . (:foreground "gray" :weight bold))
+        ("CANCELED" . (:foreground "red" :weight bold))))
+
+(setq org-highest-priority ?A)
+(setq org-lowest-priority ?E)
+(setq org-default-priority ?C)
+
+;; Org-mode базовый
+(use-package org
+  :ensure t
+  :config
+  (setq org-agenda-files (my/org-agenda-files-for-current-week))
+  )
+
+;; Org-bullets — красивые маркеры заголовков
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :config
+  (setq org-bullets-bullet-list '("◉" "○" "●" "◆" "◇" "▶")))
+
+
+;; Org-super-agenda — крутая фильтрация agenda
+(use-package org-super-agenda
+  :after org-agenda
+  :config
+  (org-super-agenda-mode))
+
+;;(setq org-super-agenda-groups
+;;      '((:name "Today" :time-grid t :date today)
+;;        (:name "Overdue" :deadline past)
+;;        (:name "Due soon" :deadline future :deadline<= "+3d")
+;;        (:name "High Priority" :priority "A")
+;;        (:name "Medium Priority" :priority "B")
+;;        (:name "Low Priority" :priority "C")))
+
+;; Org-modern — современный внешний вид
+(use-package org-modern
+  :hook (org-mode . org-modern-mode))
+
+(setq org-modern-star '("◉" "○" "●" "◆" "◇" "▶"))
+(setq org-modern-hide-stars nil)
+
+;; Org-download — быстро вставлять картинки в org
+(use-package org-download
+  :after org
+  :config
+  (setq org-download-method 'directory
+      org-download-image-dir "./images"
+      org-download-heading-lvl nil))
+
