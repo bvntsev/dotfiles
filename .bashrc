@@ -5,7 +5,7 @@
 
 alias flamegui="flameshot gui"
 alias screenoff='xset dpms force off'
-alias idle='screenoff && slock'
+alias idlel='screenoff && slock'
 alias sleepl='systemctl suspend && slock'
 alias gf="~/repos/gf/gf2"
 

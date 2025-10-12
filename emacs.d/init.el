@@ -17,7 +17,7 @@
 ;; ===== Font =====
 (set-face-attribute 'default nil
                     :family "JetBrains Mono"
-                    :height 120)
+                    :height 130)
 
 ;; ===== Package Manager =====
 (require 'package)
@@ -110,11 +110,9 @@
               (local-set-key (kbd "TAB") #'my/insert-literal-tab))))
 
 (defun my/insert-literal-tab ()
-  "Вставляет буквальный символ табуляции."
   (interactive)
   (insert "\t"))
 
-;; Отключаем любые форматтеры при сохранении
 (remove-hook 'before-save-hook #'eglot-format-buffer)
 (remove-hook 'before-save-hook #'format-all-buffer)
 
@@ -123,26 +121,6 @@
   :config
   (dap-auto-configure-mode))
 
-;; (require 'dap-mode)
-;; (require 'dap-gdb) ; Для C/C++
-;; (dap-register-debug-template "C/C++ Makefile Debug"
-;;   (list :type "gdb"
-;;         :request "launch"
-;;         :name "C/C++ Makefile Debug"
-;;         :program "${workspaceFolder}/main" ;; Замени на твой исполняемый файл
-;;         :cwd "${workspaceFolder}"
-;;         :dap-compilation "make" ;; Настрой под твою сборку
-;;         :sourceArguments '(:source-map '("/home/chillwcat/Projects/chess/src" . "${workspaceFolder}/src"))
-;;         :stopOnEntry t))
-;;
-;; (dap-register-debug-template "Python Debug"
-;;   (list :type "python"
-;;         :request "launch"
-;;         :name "Python Debug"
-;;         :program "${file}" ;; Отладка текущего открытого файла
-;;         :pythonArgs '("-m" "debugpy" "--listen" "localhost:5678") ;; Опционально, если нужен удалённый дебаг
-;;         :cwd "${workspaceFolder}"
-;;         :stopOnEntry t))
 
 ;; ===== Autocompletion =====
 (use-package company
@@ -284,17 +262,7 @@
   (when map
     (define-key map (kbd "C-c d") #'my/close-buffer-or-window)))
 
-;; (defun my/insert-literal-tab ()
-;;   "Вставляет буквальный символ табуляции."
-;;   (interactive)
-;;   (insert "\t"))
-
-;; (add-hook 'eglot-managed-mode-hook
-;;           (lambda ()
-;;             (local-set-key (kbd "TAB") #'my/insert-literal-tab)))
-
 (defun my/c-newline-and-indent ()
-  "Вставляет новую строку и отступ в 4 таба."
   (interactive)
   (newline)
   (indent-to (* 4 (save-excursion
@@ -324,19 +292,19 @@
  )
 
 (require 'org)
-;; ===== Org-mode: динамическая agenda =====
+;; ===== Org-mode: dynamic agenda =====
 (defun my/org-get-month-files (&optional date)
-  "Возвращает список org-файлов за месяц для DATE, игнорируя lock-файлы."
+  "return list org-files from month for DATE, ignored lock-files."
   (let* ((date (or date (current-time)))
          (year (format-time-string "%Y" date))
-         (month (format-time-string "%m-%B" date))
+         (month (format-time-string "%m_%B" date))
          (month-dir (expand-file-name (concat "~/sync/org/" year "/" month "/"))))
     (when (file-directory-p month-dir)
       (cl-remove-if (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
                     (file-expand-wildcards (concat month-dir "*.org"))))))
 
 (defun my/org-agenda-files-for-current-week ()
-  "Возвращает список org-файлов за текущую неделю (учитывая переход месяца)."
+  "return list org-files from current week."
   (let* ((today (current-time))
          (dow (string-to-number (format-time-string "%u" today))) ; 1 = Mon ... 7 = Sun
          (start-of-week (time-subtract today (days-to-time (1- dow))))
@@ -348,36 +316,8 @@
 
 (setq org-agenda-files (my/org-agenda-files-for-current-week))
 
-;; ===== Org-mode: открытие/создание файла текущего дня =====
-(defun my/org-open-today-file ()
-  "Открывает файл org текущего дня или создаёт его с шаблоном."
-  (let* ((year (format-time-string "%Y"))
-         (month (format-time-string "%m-%B"))
-         (day-file (format-time-string "%dW-%Y-%m-%d-%A.org"))
-         (dir (expand-file-name (concat "~/sync/org/" year "/" month "/")))
-         (path (expand-file-name day-file dir)))
-    (unless (file-directory-p dir)
-      (make-directory dir t))
-    (unless (file-exists-p path)
-      (with-temp-buffer
-        (insert (format "#+TITLE: %s\n" (format-time-string "%Y-%m-%d %A")))
-        (insert (format "#+DATE: %s\n" (format-time-string "%Y-%m-%d")))
-        (insert (format "#+CREATED: %s\n" (format-time-string "%Y-%m-%d %a %H:%M")))
-        (insert "#+CATEGORY: daily\n\n")
-        (dolist (section '("* Uni_classes [/]"
-                           "* Deadline [/]"
-                           "* Schedule [/]"
-                           "* Tasks [/]"
-                           "* Notes"
-                           "* Events"))
-          (insert section "\n** ...\n\n"))
-        (write-file path)))
-    (find-file path)))
 
-;; Открывать файл текущего дня при старте Emacs
-(add-hook 'emacs-startup-hook #'my/org-open-today-file)
-
-;; ===== Org-mode: кастомные TODO статусы =====
+;; ===== Org-mode: custom TODO status =====
 (setq org-todo-keywords
       '((sequence "TODO(t)" "IN-PROGRESS(p)" "WAITING(w)" "REVIEW(r)" "|" "DONE(d)" "CANCELED(c)")))
 
@@ -393,42 +333,32 @@
 (setq org-lowest-priority ?E)
 (setq org-default-priority ?C)
 
-;; Org-mode базовый
 (use-package org
   :ensure t
   :config
   (setq org-agenda-files (my/org-agenda-files-for-current-week))
   )
 
-;; Org-bullets — красивые маркеры заголовков
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
   :config
   (setq org-bullets-bullet-list '("◉" "○" "●" "◆" "◇" "▶")))
 
 
-;; Org-super-agenda — крутая фильтрация agenda
 (use-package org-super-agenda
   :after org-agenda
   :config
   (org-super-agenda-mode))
 
-;;(setq org-super-agenda-groups
-;;      '((:name "Today" :time-grid t :date today)
-;;        (:name "Overdue" :deadline past)
-;;        (:name "Due soon" :deadline future :deadline<= "+3d")
-;;        (:name "High Priority" :priority "A")
-;;        (:name "Medium Priority" :priority "B")
-;;        (:name "Low Priority" :priority "C")))
 
-;; Org-modern — современный внешний вид
+;; Org-modern — modern ui
 (use-package org-modern
   :hook (org-mode . org-modern-mode))
 
 (setq org-modern-star '("◉" "○" "●" "◆" "◇" "▶"))
 (setq org-modern-hide-stars nil)
 
-;; Org-download — быстро вставлять картинки в org
+;; Org-download — quick paste picture to org files
 (use-package org-download
   :after org
   :config
@@ -436,3 +366,19 @@
       org-download-image-dir "./images"
       org-download-heading-lvl nil))
 
+(defun my/org-skip-old-entries ()
+  (let* ((scheduled (org-get-scheduled-time (point)))
+         (cutoff (time-subtract
+                  (encode-time 0 0 0  ; 00:00:00 current day
+                               (nth 3 (decode-time))  ; day
+                               (nth 4 (decode-time))  ; month
+                               (nth 5 (decode-time))) ; year
+                  (* 3 86400))))      ; 3 days ago
+    (when (and scheduled (time-less-p scheduled cutoff))
+      (org-end-of-subtree t))))
+
+(setq org-agenda-custom-commands
+      '(("c" "My Clean agenda"
+         agenda ""
+         ((org-agenda-skip-function #'my/org-skip-old-entries)
+          (org-agenda-span 7)))))
