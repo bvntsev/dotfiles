@@ -60,12 +60,24 @@ return {
 
     require('mason').setup({})
     require('mason-lspconfig').setup({
-      -- allows us to install through mason and not worry about it after that
       handlers = {
         function(server_name)
           require('lspconfig')[server_name].setup({})
         end,
-      }
+        ["clangd"] = function()
+          require('lspconfig').clangd.setup({
+            cmd = {
+              "clangd",
+              "--background-index",
+              "--clang-tidy",
+              "--header-insertion=never",
+              "--completion-style=detailed",
+              "--compile-commands-dir=build",
+            },
+            root_dir = require('lspconfig.util').root_pattern("compile_commands.json", ".git"),
+          })
+        end,
+      },
     })
 
     ---

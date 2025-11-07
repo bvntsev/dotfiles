@@ -244,6 +244,8 @@
   "cd" '(compile :which-key "compile current directory")
   "cp" '(project-compile :which-key "project compile")
 
+  "oa" '(org-agenda :which-key "org-agenda")
+
   "t" '(my/evil-buffer-new-named :which-key "new buffer")
   "d" '(my/close-buffer-or-window :which-key "delete buffer")
   "<tab>" '(my/next-user-buffer :which-key "next-buffer")
