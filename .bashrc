@@ -3,9 +3,13 @@
 # Если оболочка неинтерактивная, ничего не делаем
 [[ $- != *i* ]] && return
 
-alias screenoff='xset dpms force off'
-alias idlel='screenoff && slock'
-alias sleepl='systemctl suspend && slock'
+# alias screenoff='xset dpms force off'
+alias idlel='swaylock'
+alias sleepl='systemctl suspend && swaylock'
+
+# alias screenoff='wlopm --off DP-1'
+# alias screenon='wlopm --on DP-1'
+# alias idlel='swaylock -f && screenoff'
 
 alias proxyon='export http_proxy="http://127.0.0.1:2080"; \
 export https_proxy="http://127.0.0.1:2080"; \
@@ -52,7 +56,8 @@ alias du='du -h'        # Человеко-читаемые размеры
 alias mkdir='mkdir -p'  # Создавать родительские каталоги при необходимости
 
 # color prompt (PS1)
-PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+# PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+PS1='\u@\h:\w# '
 
 # add user path to PATH
 if [ -d "$HOME/.local/bin" ]; then

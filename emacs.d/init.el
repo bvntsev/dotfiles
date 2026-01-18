@@ -28,7 +28,7 @@
 
 (setq native-comp-async-report-warnings-errors 'silent)
 (use-package magit :defer t)
-(use-package vterm :defer t)
+;; (use-package vterm :defer t)
 (use-package treemacs :defer t)
 
 (unless (package-installed-p 'use-package)
@@ -165,7 +165,7 @@
   :hook (prog-mode . flycheck-mode))
 
 ;; ===== Terminal =====
-(use-package vterm)
+;; (use-package vterm)
 
 (use-package move-text)
 (global-set-key (kbd "s-p") 'move-text-up)
@@ -251,18 +251,15 @@
   "<tab>" '(my/next-user-buffer :which-key "next-buffer")
   "<backtab>" '(my/prev-user-buffer :which-key "prev-buffer"))
 
-(global-set-key (kbd "C-c d") #'my/close-buffer-or-window)
 (global-set-key (kbd "C-c b") #'consult-buffer)
+
+(global-set-key (kbd "C-c d") #'my/close-buffer-or-window)
 
 (with-eval-after-load 'compile
   (define-key compilation-mode-map (kbd "C-c d") #'my/close-buffer-or-window))
 
 (with-eval-after-load 'special-mode
   (define-key special-mode-map (kbd "C-c d") #'my/close-buffer-or-window))
-
-(dolist (map (list compilation-mode-map special-mode-map))
-  (when map
-    (define-key map (kbd "C-c d") #'my/close-buffer-or-window)))
 
 (defun my/c-newline-and-indent ()
   (interactive)
@@ -284,6 +281,10 @@
             (setq-local indent-tabs-mode t)
             (local-set-key (kbd "RET") #'my/c-newline-and-indent)))
 (custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(org-agenda-files nil)
  '(package-selected-packages nil))
 (custom-set-faces
