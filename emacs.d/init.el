@@ -4,10 +4,10 @@
 (prefer-coding-system 'utf-8)
 
 ;; backup
-(setq make-backup-files t
-      backup-directory-alist `(("." . ,(expand-file-name "~/.emacs.d/backups")))
-      auto-save-file-name-transforms `((".*" ,(expand-file-name "~/.emacs.d/auto-saves/") t))
-      auto-save-default t)
+;; (setq make-backup-files t
+;;      backup-directory-alist `(("." . ,(expand-file-name "~/.emacs.d/backups")))
+;;      auto-save-file-name-transforms `((".*" ,(expand-file-name "~/.emacs.d/auto-saves/") t))
+;;      auto-save-default t)
 
 ;; ===== Startup Cleanup =====
 (setq inhibit-startup-screen t)
@@ -15,9 +15,7 @@
 (setq initial-scratch-message nil)
 
 ;; ===== Font =====
-(set-face-attribute 'default nil
-                    :family "JetBrains Mono"
-                    :height 130)
+(set-face-attribute 'default nil :height 110) ;;                    :height 120)
 
 ;; ===== Package Manager =====
 (require 'package)
@@ -26,10 +24,10 @@
 
 (package-initialize)
 
-(setq native-comp-async-report-warnings-errors 'silent)
+;; (setq native-comp-async-report-warnings-errors 'silent)
 (use-package magit :defer t)
 ;; (use-package vterm :defer t)
-(use-package treemacs :defer t)
+;; (use-package treemacs :defer t)
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -49,10 +47,10 @@
 (setq display-line-numbers-type 'relative)
 (global-display-line-numbers-mode t)
 
-(setq evil-split-window-below t)
+;; (setq evil-split-window-below t)
 (setq evil-vsplit-window-right t)
 
-(use-package doom-themes :config (load-theme 'doom-one t))
+(use-package doom-themes :config (load-theme 'tsdh-light t))
 (use-package all-the-icons)
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode))
@@ -63,25 +61,8 @@
 
 ;; ===== Completion & Navigation =====
 (use-package vertico :init (vertico-mode))
-(use-package consult
-  :config
-  (setq consult-buffer-filter
-        (list "\\` "
-              (rx bos
-                  (or
-                   "*Async-native-compile-log*"
-                   "*Compile-Log*"
-                   "*Warnings*"
-                   "*Messages*"
-                   "*Completions*"
-                   "*scratch*"
-                   "*Backtrace*"
-                   "*eldoc*"
-                   "*Help*"
-                   "*Apropos*"
-                   "*Flymake log*"
-                   )
-                  eos))))
+(use-package consult :ensure t)
+(setq consult-buffer-filter '("\\`\\*.*\\*"))
 (use-package marginalia :init (marginalia-mode))
 (use-package orderless
   :init (setq completion-styles '(orderless)))
@@ -105,7 +86,7 @@
           :documentOnTypeFormattingProvider)) ; Отключаем форматирование при вводе
   (add-hook 'eglot-managed-mode-hook
             (lambda ()
-              (eglot-inlay-hints-mode -1)
+;;              (eglot-inlay-hints-mode -1)
               (setq-local indent-tabs-mode t)
               (local-set-key (kbd "TAB") #'my/insert-literal-tab))))
 
@@ -116,10 +97,10 @@
 (remove-hook 'before-save-hook #'eglot-format-buffer)
 (remove-hook 'before-save-hook #'format-all-buffer)
 
-(use-package dap-mode
-  :after eglot
-  :config
-  (dap-auto-configure-mode))
+;;(use-package dap-mode
+;;  :after eglot
+;;  :config
+;;  (dap-auto-configure-mode))
 
 
 ;; ===== Autocompletion =====
@@ -148,13 +129,6 @@
   :commands magit-status
   :bind ("C-x g" . magit-status))
 
-;; ===== Tree View =====
-(use-package treemacs
-  :bind ("C-c t" . treemacs)
-  :config (treemacs-git-mode 'extended))
-(use-package treemacs-projectile :after (treemacs projectile))
-(use-package treemacs-evil :after (treemacs evil))
-
 ;; ===== Treesitter =====
 (use-package treesit
   :ensure nil
@@ -179,10 +153,10 @@
   (setq centaur-tabs-set-icons t))
 
 ;; ===== Makefile support =====
-(defun my-make-compile ()
-  (interactive)
-  (compile "make -k"))
-(global-set-key (kbd "<f5>") 'my-make-compile)
+;; (defun my-make-compile ()
+;;  (interactive)
+;;  (compile "make -k"))
+;;(global-set-key (kbd "<f5>") 'my-make-compile)
 
 ;; ===== Tabs & Indentation =====
 (setq-default tab-width 4)
@@ -198,31 +172,6 @@
     :prefix "SPC"
     :global-prefix "C-SPC"))
 
-(defun my/next-user-buffer ()
-  "move to next user buffer."
-  (interactive)
-  (let ((start (current-buffer)))
-    (next-buffer)
-    (while (and (string-prefix-p "*" (buffer-name))
-                (not (eq (current-buffer) start)))
-      (next-buffer))))
-
-(defun my/prev-user-buffer ()
-  "move to prev. user buffer."
-  (interactive)
-  (let ((start (current-buffer)))
-    (previous-buffer)
-    (while (and (string-prefix-p "*" (buffer-name))
-                (not (eq (current-buffer) start)))
-      (previous-buffer))))
-
-(defun my/evil-buffer-new-named ()
-  "Create a new user buffer with unique name."
-  (interactive)
-  (let ((buf (generate-new-buffer-name "untitled")))
-    (switch-to-buffer buf)
-    (evil-normal-state)))
-
 (defun my/close-buffer-or-window ()
   (interactive)
   (if (string-prefix-p "*" (buffer-name))
@@ -230,6 +179,9 @@
           (kill-buffer)
         (delete-window))
     (kill-buffer)))
+
+
+(global-set-key (kbd "C-x b") 'consult-buffer)
 
 (my/leader-keys
   "f"  '(:ignore t :which-key "files")
@@ -244,12 +196,7 @@
   "cd" '(compile :which-key "compile current directory")
   "cp" '(project-compile :which-key "project compile")
 
-  "oa" '(org-agenda :which-key "org-agenda")
-
-  "t" '(my/evil-buffer-new-named :which-key "new buffer")
-  "d" '(my/close-buffer-or-window :which-key "delete buffer")
-  "<tab>" '(my/next-user-buffer :which-key "next-buffer")
-  "<backtab>" '(my/prev-user-buffer :which-key "prev-buffer"))
+  "oa" '(org-agenda :which-key "org-agenda"))
 
 (global-set-key (kbd "C-c b") #'consult-buffer)
 
@@ -280,11 +227,19 @@
             (setq-local c-basic-offset 4)
             (setq-local indent-tabs-mode t)
             (local-set-key (kbd "RET") #'my/c-newline-and-indent)))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("e4a702e262c3e3501dfe25091621fe12cd63c7845221687e36a79e17cf3a67e0"
+     "0325a6b5eea7e5febae709dab35ec8648908af12cf2d2b569bedc8da0a3a81c1"
+     "456697e914823ee45365b843c89fbc79191fdbaff471b29aad9dcbe0ee1d5641"
+     "3613617b9953c22fe46ef2b593a2e5bc79ef3cc88770602e7e569bbd71de113b"
+     "720838034f1dd3b3da66f6bd4d053ee67c93a747b219d1c546c41c4e425daf93"
+     default))
  '(org-agenda-files nil)
  '(package-selected-packages nil))
 (custom-set-faces
