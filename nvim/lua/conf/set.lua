@@ -1,5 +1,6 @@
 vim.opt.clipboard = 'unnamedplus'
 
+
 local opt = vim.opt
 --put numbers on the side
 opt.number = true
@@ -71,7 +72,7 @@ vim.cmd("set ve+=onemore")
 
 --colorscheme fixing
 vim.cmd("set numberwidth=1")
--- vim.cmd("colorscheme vim")
+-- vim.cmd("colorscheme industry")
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 opt.ignorecase = true

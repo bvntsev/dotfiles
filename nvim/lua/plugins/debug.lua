@@ -1,0 +1,90 @@
+return {
+}
+
+-- return {
+--   {
+--     "mfussenegger/nvim-dap",
+--     config = function()
+--       local dap = require("dap")
+--
+--       -- ======================
+--       -- C / C++ (LLDB)
+--       -- ======================
+--       dap.adapters.lldb = {
+--         type = "executable",
+--         command = "lldb-vscode", -- убедись, что установлен
+--         name = "lldb"
+--       }
+--
+--       dap.configurations.cpp = {
+--         {
+--           name = "Launch file",
+--           type = "lldb",
+--           request = "launch",
+--           program = function()
+--             return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+--           end,
+--           cwd = "${workspaceFolder}",
+--           stopOnEntry = false,
+--         },
+--       }
+--
+--       dap.configurations.c = dap.configurations.cpp
+--
+--       -- ======================
+--       -- Python
+--       -- ======================
+--       dap.adapters.python = {
+--         type = "executable",
+--         command = "python",
+--         args = { "-m", "debugpy.adapter" },
+--       }
+--
+--       dap.configurations.python = {
+--         {
+--           type = "python",
+--           request = "launch",
+--           name = "Launch file",
+--           program = "${file}",
+--           pythonPath = function()
+--             return "python"
+--           end,
+--         },
+--       }
+--
+--       -- ======================
+--       -- Keymaps
+--       -- ======================
+--       vim.keymap.set("n", "<F5>", dap.continue)
+--       vim.keymap.set("n", "<F10>", dap.step_over)
+--       vim.keymap.set("n", "<F11>", dap.step_into)
+--       vim.keymap.set("n", "<F12>", dap.step_out)
+--       vim.keymap.set("n", "<Leader>b", dap.toggle_breakpoint)
+--       vim.keymap.set("n", "<Leader>B", function()
+--         dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
+--       end)
+--     end,
+--   },
+--
+--   {
+--     "rcarriga/nvim-dap-ui",
+--     dependencies = { "mfussenegger/nvim-dap" },
+--     config = function()
+--       local dap = require("dap")
+--       local dapui = require("dapui")
+--
+--       dapui.setup()
+--
+--       -- авто UI
+--       dap.listeners.after.event_initialized["dapui_config"] = function()
+--         dapui.open()
+--       end
+--       dap.listeners.before.event_terminated["dapui_config"] = function()
+--         dapui.close()
+--       end
+--       dap.listeners.before.event_exited["dapui_config"] = function()
+--         dapui.close()
+--       end
+--     end,
+--   }
+-- }

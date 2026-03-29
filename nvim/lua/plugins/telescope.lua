@@ -4,11 +4,11 @@ return {
   {
 	'nvim-telescope/telescope.nvim',
 	dependencies = {
-		{ 'nvim-telescope/telescope-fzf-native.nvim','BurntSushi/ripgrep', build = 'make'  }
-	},--'nvim-telescope/telescope-fzf-native.nvim', 
+		{ 'BurntSushi/ripgrep', 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' }
+	},
 	config = function(lazy, opts) 
 		local telescope = require('telescope')
-		require('telescope').load_extension('fzf')
+		telescope.load_extension('fzf')
 		telescope.setup({
 			defaults = {
 				wrap_result = true,
@@ -48,10 +48,28 @@ return {
 			} end,
 			desc = "Old (recent) files"},
 			{'<leader><space>', '<cmd>Telescope buffers<cr>', desc = "Buffers"},
+			{'<leader>b', '<cmd>Telescope buffers<cr>', desc = "Buffers"},
+			{'<leader>p', '<cmd>Telescope buffers<cr>', desc = "Buffers"},
 
 			{'<leader>ff', '<cmd>Telescope find_files<cr>', desc = "Find filenames"},
 			{'<leader>fm', '<cmd>Telescope marks<cr>', desc = "Marks"},
-		    {'<leader>fw', '<cmd>Telescope live_grep<cr>', desc = "Grep files"},
+			{'<leader>fw', '<cmd>Telescope live_grep<cr>', desc = "Grep files"},
+			{'<leader>ld', '<cmd>Telescope diagnostics<cr>', desc = "diagnostics"},
+			{"<leader>fb", function()
+				require("telescope.builtin").live_grep {
+					prompt_title = 'grep open files',
+					grep_open_files = true }
+				end, desc = "Grep open files"},
+				{"<leader>fc", function() require("telescope.builtin").current_buffer_fuzzy_find() end,  desc = "Grep this file"},
+				{"<leader>:",  function() require("telescope.builtin").command_history { prompt_title = 'Command history' } end,  desc = "cmd history"},
+				{ "<leader>ls", function()
+					local aerial_avail, _ = pcall(require, "aerial")
+					if aerial_avail then
+						require("telescope").extensions.aerial.aerial()
+					else
+						require("telescope.builtin").lsp_document_symbols()
+					end
+				end, desc = "Search symbols" },
 			}
 		}
 }

@@ -29,8 +29,25 @@ vim.keymap.set("i", "<S-Tab>", "<C-d>")
 --change buffer
 vim.keymap.set("n", "<leader>t", ":enew<CR>")
 vim.keymap.set("n", "<leader>d", ":bd<CR>")
-vim.keymap.set("n", "<leader><Tab>", ":bnext<CR>")
-vim.keymap.set("n", "<leader><S-Tab>", ":bprev<CR>")
+-- vim.keymap.set("n", "<leader><Tab>", ":bnext<CR>")
+-- vim.keymap.set("n", "<leader><S-Tab>", ":bprev<CR>")
+
+-- Open compiler
+vim.api.nvim_set_keymap('n', '<leader>r', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
+
+-- Redo last selected option
+vim.api.nvim_set_keymap('n', '<leader>R',
+     "<cmd>CompilerStop<cr>" -- (Optional, to dispose all tasks before redo)
+  .. "<cmd>CompilerRedo<cr>",
+ { noremap = true, silent = true })
+
+vim.keymap.set("t", "<ESC>", "<C-\\><C-n>")
+-- Toggle compiler results
+-- vim.api.nvim_set_keymap('n', '<S-F7>', "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
+
+
+-- vim.keymap.set("n", "<leader>r", ":botright split | terminal make -k<CR>")
+-- vim.keymap.set("n", "<leader>R", ":set makeprg=")
 
 --use d without copy
 -- vim.keymap.set("n", "d", '"_d')
