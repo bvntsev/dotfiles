@@ -1,0 +1,248 @@
+;;; init.el --- minimal vanilla Emacs config -*- lexical-binding: t; -*-
+
+;; Keep built-in package initialization off; we do it ourselves.
+(setq package-enable-at-startup nil)
+(set-face-attribute 'default nil
+                    :family "SF Mono"
+                    :height 120)
+(set-face-attribute 'fixed-pitch nil :family "Hack")
+;; (set-face-attribute 'variable-pitch nil :family "Cantarell")
+(load-theme 'gruber-darker t)
+
+(setq-default fill-column 80)
+(global-display-fill-column-indicator-mode 1)
+(set-face-foreground 'fill-column-indicator "#444444") ;; grey
+
+
+(require 'package)
+(setq package-archives
+      '(("gnu"   . "https://elpa.gnu.org/packages/")
+        ("melpa" . "https://melpa.org/packages/")))
+(package-initialize)
+
+(unless package-archive-contents
+  (condition-case err
+      (package-refresh-contents)
+    (error
+     (message "Package refresh failed: %S" err))))
+
+(unless (package-installed-p 'use-package)
+  (condition-case err
+      (progn
+        (unless package-archive-contents
+          (package-refresh-contents))
+        (package-install 'use-package))
+    (error
+     (message "Failed to install use-package: %S" err))))
+
+(eval-when-compile
+  (require 'use-package))
+
+(setq use-package-always-ensure t
+      use-package-expand-minimally t)
+
+;;; Basic editor behavior
+
+(setq inhibit-startup-screen t
+      initial-scratch-message nil
+      ring-bell-function #'ignore
+      use-dialog-box nil
+      visible-bell nil
+      frame-title-format '("%b"))
+
+(menu-bar-mode -1)
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+(when (fboundp 'scroll-bar-mode)
+  (scroll-bar-mode -1))
+
+(column-number-mode 1)
+(global-auto-revert-mode 1)
+(save-place-mode 1)
+(savehist-mode 1)
+(recentf-mode 1)
+
+(setq recentf-max-saved-items 200
+      recentf-max-menu-items 25)
+
+;; Keep backups and auto-saves away from project trees.
+(defvar my/emacs-backup-dir (expand-file-name "backups/" user-emacs-directory))
+(defvar my/emacs-autosave-dir (expand-file-name "auto-save/" user-emacs-directory))
+
+(make-directory my/emacs-backup-dir t)
+(make-directory my/emacs-autosave-dir t)
+
+(setq backup-directory-alist `(("." . ,my/emacs-backup-dir))
+      auto-save-file-name-transforms `((".*" ,my/emacs-autosave-dir t))
+      create-lockfiles nil)
+
+;; Useful in programming buffers, but not forced everywhere.
+(add-hook 'prog-mode-hook #'display-line-numbers-mode)
+
+;;; Completion stack
+
+(use-package vertico
+  :init
+  (vertico-mode 1))
+
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides
+   '((file (styles basic partial-completion)))))
+
+(use-package marginalia
+  :init
+  (marginalia-mode 1))
+
+(use-package consult
+  :custom
+  (xref-show-definitions-function #'consult-xref)
+  (xref-show-xrefs-function #'consult-xref)
+  (completion-in-region-function #'consult-completion-in-region))
+
+;; (use-package corfu
+;;   :init
+;;   (global-corfu-mode 1)
+;;   :custom
+;;   (corfu-auto t)
+;;   (corfu-auto-prefix 2)
+;;   (corfu-cycle t)
+;;   (corfu-preview-current nil)
+;;   (corfu-on-exact-match nil))
+(use-package company
+  :ensure t
+  :hook (prog-mode . company-mode)
+  :config
+  (setq company-tooltip-align-annotations t
+        company-show-numbers t)
+  (setq company-minimum-prefix-length 1
+        company-idle-delay 0.1
+        company-auto-commit nil
+        company-auto-complete nil))
+  
+(use-package cape
+  :init
+  ;; Backends can be added later, per mode, after you approve the setup.
+  nil)
+
+;;; Languages / LSP
+
+(use-package eglot
+  :hook ((c-mode
+          c++-mode
+          python-mode
+          sh-mode
+          cmake-mode) . eglot-ensure)
+  :custom
+  (eglot-autoshutdown t)
+  (eglot-report-progress nil))
+(setq eglot-ignored-server-capabilities '(:inlayHintProvider))
+;; CMake editing support.
+(use-package cmake-mode
+  :mode (("CMakeLists\\.txt\\'" . cmake-mode)
+         ("\\.cmake\\'" . cmake-mode)))
+
+;;; Org
+
+(use-package org
+  :ensure nil
+  :custom
+  (org-hide-emphasis-markers t)
+  (org-startup-indented t)
+  (org-return-follows-link t))
+
+;; ====== 
+(defun my/org-get-month-files (&optional date)
+  "return list org-files from month for DATE, ignored lock-files."
+  (let* ((date (or date (current-time)))
+         (year (format-time-string "%Y" date))
+         (month (format-time-string "%m_%B" date))
+         (month-dir (expand-file-name (concat "~/sync/org/" year "/" month "/"))))
+    (when (file-directory-p month-dir)
+      (cl-remove-if (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
+                    (file-expand-wildcards (concat month-dir "*.org"))))))
+
+(defun my/org-agenda-files-for-current-week ()
+  "return list org-files from current week."
+  (let* ((today (current-time))
+         (dow (string-to-number (format-time-string "%u" today))) ; 1 = Mon ... 7 = Sun
+         (start-of-week (time-subtract today (days-to-time (1- dow))))
+         (dates (cl-loop for i from 0 to 6
+                         collect (time-add start-of-week (days-to-time i)))))
+    (delete-dups
+     (apply 'append
+            (mapcar #'my/org-get-month-files dates)))))
+
+(setq org-agenda-files (my/org-agenda-files-for-current-week))
+
+
+;; ===== Org-mode: custom TODO status =====
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "IN-PROGRESS(p)" "WAITING(w)" "REVIEW(r)" "|" "DONE(d)" "CANCELED(c)")))
+
+(setq org-todo-keyword-faces
+      '(("TODO" . (:foreground "green" :weight bold))
+        ("IN-PROGRESS" . (:foreground "orange" :weight bold))
+        ("WAITING" . (:foreground "yellow" :weight bold))
+        ("REVIEW" . (:foreground "cyan" :weight bold))
+        ("DONE" . (:foreground "gray" :weight bold))
+        ("CANCELED" . (:foreground "red" :weight bold))))
+
+(setq org-highest-priority ?A)
+(setq org-lowest-priority ?E)
+(setq org-default-priority ?C)
+
+(defun my/org-skip-old-entries ()
+  (let* ((scheduled (org-get-scheduled-time (point)))
+         (cutoff (time-subtract
+                  (encode-time 0 0 0  ; 00:00:00 current day
+                               (nth 3 (decode-time))  ; day
+                               (nth 4 (decode-time))  ; month
+                               (nth 5 (decode-time))) ; year
+                  (* 3 86400))))      ; 3 days ago
+    (when (and scheduled (time-less-p scheduled cutoff))
+      (org-end-of-subtree t))))
+
+(setq org-agenda-custom-commands
+      '(("c" "My Clean agenda"
+         agenda ""
+         ((org-agenda-skip-function #'my/org-skip-old-entries)
+          (org-agenda-span 7)))))
+
+
+
+;;; Git
+
+(use-package magit
+  :commands (magit-status
+             magit-dispatch
+             magit-file-dispatch))
+
+;;; Compilation / build output
+
+(setq compilation-scroll-output t)
+
+;;; Keybindings
+
+;; Intentionally empty for now.
+;; All custom bindings stay pending your approval.
+
+(provide 'init)
+;;; init.el ends here
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(cape cmake-mode company consult corfu gruber-darker-theme magit marginalia
+	  orderless vertico)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+(put 'scroll-left 'disabled nil)

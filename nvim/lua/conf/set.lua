@@ -72,7 +72,7 @@ vim.cmd("set ve+=onemore")
 
 --colorscheme fixing
 vim.cmd("set numberwidth=1")
--- vim.cmd("colorscheme industry")
+vim.cmd("colorscheme gruber-darker")
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 opt.ignorecase = true
