@@ -57,7 +57,10 @@ alias mkdir='mkdir -p'  # Создавать родительские катал
 
 # color prompt (PS1)
 # PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-PS1='\u@\h:\w# '
+# PS1='\u@\h:\w# '
+GREEN="\[$(tput setaf 2)\]"
+RESET="\[$(tput sgr0)\]"
+PS1="${GREEN}\u${RESET}@\h:\w# "
 
 # add user path to PATH
 if [ -d "$HOME/.local/bin" ]; then

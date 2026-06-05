@@ -4,8 +4,8 @@
 (setq package-enable-at-startup nil)
 (set-face-attribute 'default nil
                     :family "SF Mono"
-                    :height 120)
-(set-face-attribute 'fixed-pitch nil :family "Hack")
+                    :height 100)
+;; (set-face-attribute 'fixed-pitch nil :family "Hack")
 ;; (set-face-attribute 'variable-pitch nil :family "Cantarell")
 (load-theme 'gruber-darker t)
 
@@ -13,6 +13,16 @@
 (global-display-fill-column-indicator-mode 1)
 (set-face-foreground 'fill-column-indicator "#444444") ;; grey
 
+(defun my-scroll-half-page-down ()
+  (interactive)
+  (scroll-up-command (/ (window-body-height) 2)))
+
+(defun my-scroll-half-page-up ()
+  (interactive)
+  (scroll-down-command (/ (window-body-height) 2)))
+
+(global-set-key (kbd "C-v") #'my-scroll-half-page-down)
+(global-set-key (kbd "M-v") #'my-scroll-half-page-up)
 
 (require 'package)
 (setq package-archives
@@ -138,11 +148,25 @@
   :custom
   (eglot-autoshutdown t)
   (eglot-report-progress nil))
-(setq eglot-ignored-server-capabilities '(:inlayHintProvider))
+(setq eglot-ignored-server-capabilities
+      '(:inlayHintProvider
+        :documentFormattingProvider
+        :documentRangeFormattingProvider))
 ;; CMake editing support.
 (use-package cmake-mode
   :mode (("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)))
+
+(electric-indent-mode -1)
+(setq-default tab-width 4)
+(setq-default indent-tabs-mode t)
+(setq c-default-style "linux"
+      c-basic-offset 4)
+
+(add-hook 'c-mode-common-hook
+          (lambda ()
+            (setq indent-tabs-mode t
+                  tab-width 4)))
 
 ;;; Org
 
@@ -164,18 +188,32 @@
       (cl-remove-if (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
                     (file-expand-wildcards (concat month-dir "*.org"))))))
 
-(defun my/org-agenda-files-for-current-week ()
-  "return list org-files from current week."
-  (let* ((today (current-time))
-         (dow (string-to-number (format-time-string "%u" today))) ; 1 = Mon ... 7 = Sun
-         (start-of-week (time-subtract today (days-to-time (1- dow))))
-         (dates (cl-loop for i from 0 to 6
-                         collect (time-add start-of-week (days-to-time i)))))
-    (delete-dups
-     (apply 'append
-            (mapcar #'my/org-get-month-files dates)))))
+(defun my/org--month-dir (time)
+  (let ((system-time-locale "C"))  ;; или "en_US.UTF-8"
+    (expand-file-name
+     (format-time-string "~/sync/org/%Y/%m_%B/" time))))
 
-(setq org-agenda-files (my/org-agenda-files-for-current-week))
+(defun my/org-agenda-files-current-and-next-week ()
+  "Return org files for current and next ISO week."
+  (let* ((today (current-time))
+         (weeks (list (format-time-string "%V" today)
+                      (format-time-string "%V"
+                                           (time-add today (days-to-time 7)))))
+         (dirs (list (my/org--month-dir today)
+                     (my/org--month-dir (time-add today (days-to-time 7))))))
+    (delete-dups
+     (apply #'append
+            (mapcar
+             (lambda (dir)
+               (when (file-directory-p dir)
+                 (apply #'append
+                        (mapcar
+                         (lambda (week)
+                           (file-expand-wildcards
+                            (concat dir week "W_*.org")))
+                         weeks))))
+             dirs)))))
+(setq org-agenda-files (my/org-agenda-files-current-and-next-week))
 
 
 ;; ===== Org-mode: custom TODO status =====
@@ -237,7 +275,7 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(cape cmake-mode company consult corfu gruber-darker-theme magit marginalia
+   '(cape cmake-mode company consult eglot gruber-darker-theme magit marginalia
 	  orderless vertico)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
