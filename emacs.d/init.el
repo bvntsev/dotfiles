@@ -5,6 +5,8 @@
 (set-face-attribute 'default nil
                     :family "SF Mono"
                     :height 100)
+(add-to-list 'default-frame-alist '(width . 140))
+(add-to-list 'default-frame-alist '(height . 60))
 ;; (set-face-attribute 'fixed-pitch nil :family "Hack")
 ;; (set-face-attribute 'variable-pitch nil :family "Cantarell")
 (load-theme 'gruber-darker t)
@@ -152,12 +154,32 @@
       '(:inlayHintProvider
         :documentFormattingProvider
         :documentRangeFormattingProvider))
+(defun my-insert-tab ()
+  (interactive)
+  (insert "\t"))
+
+
+(add-hook 'c-mode-common-hook
+          (lambda ()
+            (setq-local c-syntactic-indentation nil)
+            (setq-local electric-indent-inhibit t)
+            (local-set-key (kbd "TAB") #'my-insert-tab)))
+(add-hook 'eglot-managed-mode-hook
+          (lambda ()
+            (remove-hook 'post-self-insert-hook
+                         #'eglot--post-self-insert-hook
+                         t)))
+(electric-indent-mode 1)
+
+(setq whitespace-style '(face tabs tab-mark))
+(global-whitespace-mode 1)
+(setq backward-delete-char-untabify-method nil)
+
 ;; CMake editing support.
 (use-package cmake-mode
   :mode (("CMakeLists\\.txt\\'" . cmake-mode)
          ("\\.cmake\\'" . cmake-mode)))
 
-(electric-indent-mode -1)
 (setq-default tab-width 4)
 (setq-default indent-tabs-mode t)
 (setq c-default-style "linux"
@@ -274,9 +296,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(cape cmake-mode company consult eglot gruber-darker-theme magit marginalia
-	  orderless vertico)))
+ '(package-selected-packages nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -284,3 +304,35 @@
  ;; If there is more than one, they won't work right.
  )
 (put 'scroll-left 'disabled nil)
+
+;; For pdf-tools building
+;; sudo dnf install \
+;;    gcc gcc-c++ make automake \
+;;    libpng-devel zlib-devel \
+;;    poppler-devel poppler-glib-devel \
+;;    ImageMagick
+(use-package pdf-tools
+  :ensure t
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :config
+  (pdf-tools-install))
+
+(defun trans ()
+  (interactive)
+  (let* ((origin (selected-window))
+         (direction (completing-read
+                     "Direction: "
+                     '("en:ru" "ru:en")
+                     nil t))
+         (text (read-string "Text: "))
+         (buffer (get-buffer-create "*trans*")))
+    (with-current-buffer buffer
+      (erase-buffer)
+      (call-process "trans" nil buffer nil
+                    direction text)
+	  (goto-char (point-min)))
+    (display-buffer-in-side-window
+     buffer
+     '((side . bottom)
+       (window-height . 0.4)))
+    (select-window origin)))
