@@ -5,8 +5,8 @@
 (set-face-attribute 'default nil
                     :family "SF Mono"
                     :height 100)
-(add-to-list 'default-frame-alist '(width . 140))
-(add-to-list 'default-frame-alist '(height . 60))
+(add-to-list 'default-frame-alist '(width . 120))
+(add-to-list 'default-frame-alist '(height . 40))
 ;; (set-face-attribute 'fixed-pitch nil :family "Hack")
 ;; (set-face-attribute 'variable-pitch nil :family "Cantarell")
 (load-theme 'gruber-darker t)
@@ -199,44 +199,17 @@
   (org-startup-indented t)
   (org-return-follows-link t))
 
-;; ====== 
-(defun my/org-get-month-files (&optional date)
-  "return list org-files from month for DATE, ignored lock-files."
-  (let* ((date (or date (current-time)))
-         (year (format-time-string "%Y" date))
-         (month (format-time-string "%m_%B" date))
-         (month-dir (expand-file-name (concat "~/sync/org/" year "/" month "/"))))
-    (when (file-directory-p month-dir)
-      (cl-remove-if (lambda (f) (string-prefix-p ".#" (file-name-nondirectory f)))
-                    (file-expand-wildcards (concat month-dir "*.org"))))))
-
-(defun my/org--month-dir (time)
-  (let ((system-time-locale "C"))  ;; или "en_US.UTF-8"
-    (expand-file-name
-     (format-time-string "~/sync/org/%Y/%m_%B/" time))))
-
-(defun my/org-agenda-files-current-and-next-week ()
-  "Return org files for current and next ISO week."
-  (let* ((today (current-time))
-         (weeks (list (format-time-string "%V" today)
-                      (format-time-string "%V"
-                                           (time-add today (days-to-time 7)))))
-         (dirs (list (my/org--month-dir today)
-                     (my/org--month-dir (time-add today (days-to-time 7))))))
-    (delete-dups
-     (apply #'append
-            (mapcar
-             (lambda (dir)
-               (when (file-directory-p dir)
-                 (apply #'append
-                        (mapcar
-                         (lambda (week)
-                           (file-expand-wildcards
-                            (concat dir week "W_*.org")))
-                         weeks))))
-             dirs)))))
-(setq org-agenda-files (my/org-agenda-files-current-and-next-week))
-
+(use-package org-roam
+  :ensure t
+  :custom
+  (org-roam-directory (file-truename "~/sync/org/roam"))
+  :bind (("C-c n f" . org-roam-node-find)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n c" . org-roam-capture)
+         ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  (org-roam-db-autosync-mode))
 
 ;; ===== Org-mode: custom TODO status =====
 (setq org-todo-keywords
@@ -271,6 +244,8 @@
          ((org-agenda-skip-function #'my/org-skip-old-entries)
           (org-agenda-span 7)))))
 
+(setq org-agenda-files
+      '("~/sync/org/roam/daily"))
 
 
 ;;; Git
